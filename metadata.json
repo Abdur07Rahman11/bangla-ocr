@@ -1,0 +1,8 @@
+{
+  "name": "Bangla OCR",
+  "description": "Extract text from Bengali documents and images with formatting preservation and Word (.doc) export.",
+  "permissions": [],
+  "capabilities": [
+    "MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"
+  ]
+}

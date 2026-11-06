@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
-import { Camera, FileText, Download, Settings, RefreshCw, Edit3, AlertCircle, Key } from 'lucide-react';
+import { Camera, FileText, Download, Settings, RefreshCw, Edit3, AlertCircle, Key, Info } from 'lucide-react';
+import './index.css';
 
 export default function App() {
   const [activeTab, setActiveTab] = useState('scan');
@@ -16,11 +17,24 @@ export default function App() {
   const [scanCount, setScanCount] = useState(0);
   const DAILY_LIMIT = 10;
   const [quotaExceededMsg, setQuotaExceededMsg] = useState('');
+  const [notice, setNotice] = useState(null);
   
   const [isAdmin, setIsAdmin] = useState(false);
   const [adminInput, setAdminInput] = useState('');
   const ADMIN_SECRET = 'admin123'; 
   const [showAdminPanel, setShowAdminPanel] = useState(false);
+
+  const notify = (msg, isError = false) => {
+    try {
+      window.alert(msg);
+    } catch {
+      // safe fallback if iframe sandbox blocks window.alert
+    }
+    setNotice({ msg, isError });
+    setTimeout(() => {
+      setNotice((prev) => (prev?.msg === msg ? null : prev));
+    }, 4500);
+  };
 
   useEffect(() => {
     const adminStatus = sessionStorage.getItem('bangla_ocr_admin');
@@ -49,9 +63,9 @@ export default function App() {
       sessionStorage.setItem('bangla_ocr_admin', 'true');
       setQuotaExceededMsg('');
       setShowAdminPanel(false);
-      alert('অভিনন্দন! আপনি অ্যাডমিন মোডে প্রবেশ করেছেন। আপনার কোনো লিমিট নেই।');
+      notify('অভিনন্দন! আপনি অ্যাডমিন মোডে প্রবেশ করেছেন। আপনার কোনো লিমিট নেই।');
     } else {
-      alert('ভুল পাসওয়ার্ড! সঠিক পাসওয়ার্ড দিন।');
+      notify('ভুল পাসওয়ার্ড! সঠিক পাসওয়ার্ড দিন।', true);
     }
   };
 
@@ -76,7 +90,7 @@ export default function App() {
     }
 
     if (!base64Image) {
-      alert('দয়া করে প্রথমে একটি ছবি সিলেক্ট করুন!');
+      notify('দয়া করে প্রথমে একটি ছবি সিলেক্ট করুন!', true);
       return;
     }
 
@@ -104,6 +118,9 @@ export default function App() {
           }
         }
 
+      } else if (result.error) {
+        setExtractedText(`সমস্যা: ${result.error}`);
+        notify(result.error, true);
       } else {
         setExtractedText('লেখা শনাক্ত করা যায়নি। পরিষ্কার ছবি দিয়ে আবার চেষ্টা করুন।');
       }
@@ -169,6 +186,17 @@ export default function App() {
           )}
         </div>
       </header>
+
+      {notice && (
+        <div className={`p-3 text-sm flex items-center justify-between shadow-sm transition-all ${
+          notice.isError ? 'bg-rose-50 text-rose-800 border-b border-rose-200' : 'bg-emerald-50 text-emerald-800 border-b border-emerald-200'
+        }`}>
+          <div className="flex items-center gap-2 max-w-7xl mx-auto w-full px-4">
+            {notice.isError ? <AlertCircle className="w-4 h-4 flex-shrink-0" /> : <Info className="w-4 h-4 flex-shrink-0" />}
+            <span>{notice.msg}</span>
+          </div>
+        </div>
+      )}
 
       {showAdminPanel && !isAdmin && (
         <div className="bg-indigo-50 border-b p-3 flex justify-center items-center gap-2 shadow-inner">
