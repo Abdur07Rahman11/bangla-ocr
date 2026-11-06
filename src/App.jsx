@@ -36,22 +36,43 @@ export default function App() {
     }, 4500);
   };
 
+  const safeStorage = {
+    getItem: (key) => {
+      try { return localStorage.getItem(key); } catch { return null; }
+    },
+    setItem: (key, val) => {
+      try { localStorage.setItem(key, val); } catch { /* ignore */ }
+    },
+    getSession: (key) => {
+      try { return sessionStorage.getItem(key); } catch { return null; }
+    },
+    setSession: (key, val) => {
+      try { sessionStorage.setItem(key, val); } catch { /* ignore */ }
+    }
+  };
+
   useEffect(() => {
-    const adminStatus = sessionStorage.getItem('bangla_ocr_admin');
+    const adminStatus = safeStorage.getSession('bangla_ocr_admin');
     if (adminStatus === 'true') {
       setIsAdmin(true);
     }
 
     const today = new Date().toDateString();
-    const savedData = JSON.parse(localStorage.getItem('bangla_ocr_usage'));
+    let savedData = null;
+    try {
+      const raw = safeStorage.getItem('bangla_ocr_usage');
+      savedData = raw ? JSON.parse(raw) : null;
+    } catch {
+      savedData = null;
+    }
 
     if (savedData && savedData.date === today) {
-      setScanCount(savedData.count);
-      if (savedData.count >= DAILY_LIMIT && adminStatus !== 'true') {
+      setScanCount(savedData.count || 0);
+      if ((savedData.count || 0) >= DAILY_LIMIT && adminStatus !== 'true') {
         setQuotaExceededMsg('কোটা এক্সিস্টিড! আজকের আপনার ফ্রি কোটা (১০টি ছবি) শেষ হয়ে গেছে। অনুগ্রহ করে আগামীকাল আবার চেষ্টা করুন।');
       }
     } else {
-      localStorage.setItem('bangla_ocr_usage', JSON.stringify({ date: today, count: 0 }));
+      safeStorage.setItem('bangla_ocr_usage', JSON.stringify({ date: today, count: 0 }));
       setScanCount(0);
     }
   }, []);
@@ -60,7 +81,7 @@ export default function App() {
     e.preventDefault();
     if (adminInput === ADMIN_SECRET) {
       setIsAdmin(true);
-      sessionStorage.setItem('bangla_ocr_admin', 'true');
+      safeStorage.setSession('bangla_ocr_admin', 'true');
       setQuotaExceededMsg('');
       setShowAdminPanel(false);
       notify('অভিনন্দন! আপনি অ্যাডমিন মোডে প্রবেশ করেছেন। আপনার কোনো লিমিট নেই।');
@@ -111,7 +132,7 @@ export default function App() {
           const newCount = scanCount + 1;
           setScanCount(newCount);
           const today = new Date().toDateString();
-          localStorage.setItem('bangla_ocr_usage', JSON.stringify({ date: today, count: newCount }));
+          safeStorage.setItem('bangla_ocr_usage', JSON.stringify({ date: today, count: newCount }));
 
           if (newCount >= DAILY_LIMIT) {
             setQuotaExceededMsg('কোটা এক্সিস্টিড! আজকের আপনার ফ্রি কোটা (১০টি ছবি) শেষ হয়ে গেছে। অনুগ্রহ করে আগামীকাল আবার চেষ্টা করুন।');
