@@ -22,10 +22,10 @@ app.post('/api/ocr', async (req, res) => {
       return res.status(400).json({ error: 'ছবি প্রদান করা হয়নি (No image provided)' });
     }
 
-    const apiKey = process.env.GEMINI_API_KEY;
+    const apiKey = process.env.GEMINI_API_KEY || process.env.GOOGLE_API_KEY || process.env.GOOGLE_GENAI_API_KEY;
     if (!apiKey) {
       return res.status(500).json({ 
-        error: 'API Key পাওয়া যায়নি (GEMINI_API_KEY environment variable is not set)' 
+        error: 'API Key পাওয়া যায়নি। AI Studio-এর Settings > Secrets প্যানেলে GEMINI_API_KEY সেট করুন (অথবা Vercel-এর Environment Variables-এ যুক্ত করুন)।' 
       });
     }
 
@@ -35,7 +35,14 @@ app.post('/api/ocr', async (req, res) => {
 ২. হাতের লেখা আঁকাবাঁকা হলেও অর্থ বুঝে সঠিক বানান শনাক্ত করুন।
 ৩. শুধুমাত্র ছবিতে থাকা টেক্সটটুকু আউটপুট হিসেবে দিন, কোনো অতিরিক্ত ব্যাখ্যা বা ভূমিকা দেবেন না।`;
 
-    const ai = new GoogleGenAI({ apiKey });
+    const ai = new GoogleGenAI({ 
+      apiKey,
+      httpOptions: {
+        headers: {
+          'User-Agent': 'aistudio-build',
+        },
+      },
+    });
     
     // Clean base64 string if it contains data URI prefix
     const cleanBase64 = base64Image.includes(',') 

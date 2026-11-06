@@ -14,10 +14,12 @@ export default async function handler(req, res) {
   }
 
   const { base64Image } = req.body;
-  const apiKey = process.env.GEMINI_API_KEY;
+  const apiKey = process.env.GEMINI_API_KEY || process.env.GOOGLE_API_KEY || process.env.GOOGLE_GENAI_API_KEY;
 
   if (!apiKey) {
-    return res.status(500).json({ error: 'API Key পাওয়া যায়নি' });
+    return res.status(500).json({ 
+      error: 'API Key পাওয়া যায়নি। Settings > Secrets প্যানেলে GEMINI_API_KEY সেট করুন (অথবা Vercel Environment Variables-এ যুক্ত করুন)।' 
+    });
   }
 
   try {
@@ -31,7 +33,14 @@ export default async function handler(req, res) {
       ? base64Image.split(',')[1]
       : base64Image;
 
-    const ai = new GoogleGenAI({ apiKey });
+    const ai = new GoogleGenAI({ 
+      apiKey,
+      httpOptions: {
+        headers: {
+          'User-Agent': 'aistudio-build',
+        },
+      },
+    });
     const response = await ai.models.generateContent({
       model: 'gemini-2.5-flash',
       contents: [
