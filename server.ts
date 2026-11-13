@@ -50,7 +50,7 @@ app.post('/api/ocr', async (req, res) => {
       : base64Image;
 
     const response = await ai.models.generateContent({
-      model: 'gemini-2.5-flash',
+      model: 'gemini-3.8-flash',
       contents: [
         { text: prompt },
         {
